@@ -5,10 +5,10 @@ var _ = require('lodash'),
     isUrl = require('is-url'),
     marky = require('marky-markdown'),
     metrics = require('../adapters/metrics')(),
-    normalizeLicenseData = require('normalize-license-data'),
     P = require('bluebird'),
     presentCollaborator = require("./collaborator"),
     presentUser = require("./user"),
+    spdxToHTML = require('spdx-to-html'),
     url = require('url');
 
 var MINUTES = 60; // seconds
@@ -25,9 +25,11 @@ module.exports = function (pkg) {
     return Error('invalid pkg: '+ pkg.name);
   }
 
-  pkg.license = normalizeLicenseData(pkg.license);
-  if (!pkg.license) {
+  if (!pkg.license || typeof pkg.license !== 'string') {
     delete pkg.license;
+  } else {
+    var licenseLinks = spdxToHTML(pkg.license);
+    pkg.license = licenseLinks ? {links: licenseLinks} : {string: pkg.license};
   }
 
   pkg.versionsCount = pkg.versions && Object.keys(pkg.versions).length;
